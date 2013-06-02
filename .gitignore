@@ -8,5 +8,5 @@ MANIFEST.bak
 Vcdiff-Xdelta3-*.tar.gz
 Xdelta3.bs
 xdelta3.o
-Xdelta3.c
-Xdelta3.o
+Interface.c
+Interface.o

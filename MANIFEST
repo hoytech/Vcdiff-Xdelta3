@@ -20,4 +20,4 @@ Makefile.PL
 MANIFEST
 MANIFEST.SKIP
 t/load.t
-Xdelta3.xs
+Interface.xs
