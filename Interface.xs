@@ -9,7 +9,9 @@
 
 #define BUF_SIZE XD3_DEFAULT_WINSIZE
 
-//#define MIN(x,y) ((x)<(y)?(x):(y))
+#ifndef MIN
+#define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
 
 int encode_decode(int encode,
                   int source_fd, unsigned char *source_str, off_t source_str_size,
@@ -149,22 +151,59 @@ PROTOTYPES: ENABLE
 
 
 void
-_encode(source_fd, input_fd, output_fd)
+_encode(source_fd, source_sv, input_fd, input_sv, output_fd)
         int source_fd
+        SV *source_sv
         int input_fd
+        SV *input_sv
         int output_fd
     CODE:
-        //encode_decode(1, source_fd, NULL, 0, input_fd, NULL, 0, output_fd);
-        //encode_decode(1, -1, "ROFLCOPTER", 10, input_fd, NULL, 0, output_fd);
-        encode_decode(1, -1, "ROFLCOPTER", 10, -1, "ROFLZZZCOPTER", 13, output_fd);
+        unsigned char *source_str = NULL;
+        size_t source_str_size = 0;
+        unsigned char *input_str = NULL;
+        size_t input_str_size = 0;
+
+        if (source_fd == -1) {
+          source_str_size = SvCUR(source_sv);
+          source_str = SvPV(source_sv, source_str_size);
+        }
+
+        if (input_fd == -1) {
+          input_str_size = SvCUR(input_sv);
+          input_str = SvPV(input_sv, input_str_size);
+        }
+
+        encode_decode(1,
+                      source_fd, source_str, (off_t) source_str_size,
+                      input_fd, input_str, (off_t) input_str_size,
+                      output_fd);
 
 
 
 void
-_decode(source_fd, input_fd, output_fd)
+_decode(source_fd, source_sv, input_fd, input_sv, output_fd)
         int source_fd
+        SV *source_sv
         int input_fd
+        SV *input_sv
         int output_fd
     CODE:
-        //encode_decode(0, source_fd, NULL, 0, input_fd, NULL, 0, output_fd);
-        encode_decode(0, -1, "ROFLCOPTER", 10, input_fd, NULL, 0, output_fd);
+        unsigned char *source_str = NULL;
+        size_t source_str_size = 0;
+        unsigned char *input_str = NULL;
+        size_t input_str_size = 0;
+
+        if (source_fd == -1) {
+          source_str_size = SvCUR(source_sv);
+          source_str = SvPV(source_sv, source_str_size);
+        }
+
+        if (input_fd == -1) {
+          input_str_size = SvCUR(input_sv);
+          input_str = SvPV(input_sv, input_str_size);
+        }
+
+        encode_decode(0,
+                      source_fd, source_str, (off_t) source_str_size,
+                      input_fd, input_str, (off_t) input_str_size,
+                      output_fd);

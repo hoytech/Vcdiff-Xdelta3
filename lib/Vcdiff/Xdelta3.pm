@@ -10,22 +10,49 @@ XSLoader::load('Vcdiff::Xdelta3', $VERSION);
 
 
 sub encode {
-  my ($source_file, $input_file) = @_;
+  my ($source, $input) = @_;
 
-  open(my $source_fh, '<', $source_file) || die "couldn't open $source_file: $!";
-  open(my $input_fh, '<', $input_file) || die "couldn't open $input_file: $!";
+  my ($source_fileno, $source_str, $input_fileno, $input_str);
 
-  _encode(fileno($source_fh), fileno($input_fh), 1);
+  $source_fileno = $input_fileno = -1;
+
+  if (ref $source eq 'GLOB') {
+    $source_fileno = fileno($source);
+  } else {
+    $source_str = $source;
+  }
+
+  if (ref $input eq 'GLOB') {
+    $input_fileno = fileno($input);
+  } else {
+    $input_str = $input;
+  }
+
+  _encode($source_fileno, $source_str, $input_fileno, $input_str, 1);
 }
 
 
 sub decode {
-  my ($source_file, $input_file) = @_;
+  my ($source, $input) = @_;
 
-  open(my $source_fh, '<', $source_file) || die "couldn't open $source_file: $!";
-  open(my $input_fh, '<', $input_file) || die "couldn't open $input_file: $!";
+  my ($source_fileno, $source_str, $input_fileno, $input_str);
 
-  _decode(fileno($source_fh), fileno($input_fh), 1);
+  $source_fileno = $input_fileno = -1;
+
+  if (ref $source eq 'GLOB') {
+    $source_fileno = fileno($source);
+  } else {
+    $source_str = $source;
+  }
+
+  if (ref $input eq 'GLOB') {
+    $input_fileno = fileno($input);
+  } else {
+    $input_str = $input;
+  }
+
+  _decode($source_fileno, $source_str, $input_fileno, $input_str, 1);
+
 }
 
 
