@@ -9,6 +9,8 @@
 
 #define BUF_SIZE XD3_DEFAULT_WINSIZE
 
+//#define MIN(x,y) ((x)<(y)?(x):(y))
+
 int encode_decode(int encode,
                   int source_fd, unsigned char *source_str, off_t source_str_size,
                   int input_fd, unsigned char *input_str, off_t input_str_size,
@@ -17,7 +19,7 @@ int encode_decode(int encode,
   xd3_stream stream;
   xd3_config config;
   xd3_source source;
-  void *ibuf;
+  unsigned char *ibuf;
   int ibuf_len;
   FILE *source_file = NULL;
   FILE *input_file = NULL;
@@ -33,35 +35,45 @@ int encode_decode(int encode,
     output_file = fdopen(output_fd, "wb");
   }
 
-  memset (&stream, 0, sizeof (stream));
-  memset (&source, 0, sizeof (source));
+  memset(&stream, 0, sizeof (stream));
+  memset(&source, 0, sizeof (source));
 
-  xd3_init_config(&config, XD3_ADLER32);
+  xd3_init_config(&config, 0);
   config.winsize = BUF_SIZE;
   xd3_config_stream(&stream, &config);
 
   source.blksize = BUF_SIZE;
-  source.curblk = malloc(source.blksize);
   source.curblkno = 0;
 
   if (source_file) {
+    source.curblk = malloc(source.blksize);
     r = fseek(source_file, 0, SEEK_SET);
     source.onblk = fread((void*)source.curblk, 1, source.blksize, source_file);
   } else {
-    // FIXME: read from str
+    source.curblk = source_str;
+    source.onblk = MIN(source.blksize, source_str_size);
   }
 
   xd3_set_source(&stream, &source);
 
-  ibuf = malloc(BUF_SIZE);
-
-  if (input_file) fseek(input_file, 0, SEEK_SET);
+  if (input_file) {
+    ibuf = malloc(BUF_SIZE);
+    fseek(input_file, 0, SEEK_SET);
+  } else {
+    ibuf = input_str;
+    ibuf_len = 0;
+  }
 
   do
   {
-    ibuf_len = fread(ibuf, 1, BUF_SIZE, input_file);
-    if (ibuf_len < BUF_SIZE)
-    {
+    if (input_file) {
+      ibuf_len = fread(ibuf, 1, BUF_SIZE, input_file);
+    } else {
+      ibuf += ibuf_len;
+      ibuf_len = MIN(BUF_SIZE, input_str_size - (ibuf - input_str));
+    }
+
+    if (ibuf_len < BUF_SIZE) {
       xd3_set_flags(&stream, XD3_FLUSH | stream.flags);
     }
     xd3_avail_input(&stream, ibuf, ibuf_len);
@@ -84,13 +96,15 @@ process:
       goto process;
 
     case XD3_GETSRCBLK:
+      source.curblkno = source.getblkno;
+
       if (source_file) {
         r = fseek(source_file, source.blksize * source.getblkno, SEEK_SET);
-        if (r)
-          return r;
         source.onblk = fread((void*)source.curblk, 1,
                              source.blksize, source_file);
-        source.curblkno = source.getblkno;
+      } else {
+        source.curblk = source_str + (source.blksize * source.getblkno);
+        source.onblk = MIN(source.blksize, source_str_size - (source.blksize * source.getblkno));
       }
       goto process;
 
@@ -106,9 +120,20 @@ process:
 
   } while (ibuf_len == BUF_SIZE);
 
-  free(ibuf);
+  if (source_file) {
+    free((void*)source.curblk);
+    fclose(source_file);
+  }
 
-  free((void*)source.curblk);
+  if (input_file) {
+    free(ibuf);
+    fclose(input_file);
+  }
+
+  if (output_file) {
+    fclose(output_file);
+  }
+
   xd3_close_stream(&stream);
   xd3_free_stream(&stream);
 
@@ -129,7 +154,9 @@ _encode(source_fd, input_fd, output_fd)
         int input_fd
         int output_fd
     CODE:
-        encode_decode(1, source_fd, NULL, 0, input_fd, NULL, 0, output_fd);
+        //encode_decode(1, source_fd, NULL, 0, input_fd, NULL, 0, output_fd);
+        //encode_decode(1, -1, "ROFLCOPTER", 10, input_fd, NULL, 0, output_fd);
+        encode_decode(1, -1, "ROFLCOPTER", 10, -1, "ROFLZZZCOPTER", 13, output_fd);
 
 
 
@@ -139,4 +166,5 @@ _decode(source_fd, input_fd, output_fd)
         int input_fd
         int output_fd
     CODE:
-        encode_decode(0, source_fd, NULL, 0, input_fd, NULL, 0, output_fd);
+        //encode_decode(0, source_fd, NULL, 0, input_fd, NULL, 0, output_fd);
+        encode_decode(0, -1, "ROFLCOPTER", 10, input_fd, NULL, 0, output_fd);
