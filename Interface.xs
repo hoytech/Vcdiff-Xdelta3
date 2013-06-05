@@ -16,7 +16,7 @@
 int encode_decode(int encode,
                   int source_fd, unsigned char *source_str, off_t source_str_size,
                   int input_fd, unsigned char *input_str, off_t input_str_size,
-                  int output_fd) {
+                  int output_fd, SV *output_sv) {
   int r, ret;
   xd3_stream stream;
   xd3_config config;
@@ -91,10 +91,16 @@ process:
       continue;
 
     case XD3_OUTPUT:
-      r = fwrite(stream.next_out, 1, stream.avail_out, output_file);
-      if (r != (int)stream.avail_out)
-        return r;
+      if (output_file) {
+        r = fwrite(stream.next_out, 1, stream.avail_out, output_file);
+        if (r != (int)stream.avail_out)
+          return r;
+      } else {
+        sv_catpvn(output_sv, stream.next_out, stream.avail_out);
+      }
+
       xd3_consume_output(&stream);
+
       goto process;
 
     case XD3_GETSRCBLK:
@@ -151,12 +157,13 @@ PROTOTYPES: ENABLE
 
 
 void
-_encode(source_fd, source_sv, input_fd, input_sv, output_fd)
+_encode(source_fd, source_sv, input_fd, input_sv, output_fd, output_sv)
         int source_fd
         SV *source_sv
         int input_fd
         SV *input_sv
         int output_fd
+        SV *output_sv
     CODE:
         unsigned char *source_str = NULL;
         size_t source_str_size = 0;
@@ -176,17 +183,18 @@ _encode(source_fd, source_sv, input_fd, input_sv, output_fd)
         encode_decode(1,
                       source_fd, source_str, (off_t) source_str_size,
                       input_fd, input_str, (off_t) input_str_size,
-                      output_fd);
+                      output_fd, output_sv);
 
 
 
 void
-_decode(source_fd, source_sv, input_fd, input_sv, output_fd)
+_decode(source_fd, source_sv, input_fd, input_sv, output_fd, output_sv)
         int source_fd
         SV *source_sv
         int input_fd
         SV *input_sv
         int output_fd
+        SV *output_sv
     CODE:
         unsigned char *source_str = NULL;
         size_t source_str_size = 0;
@@ -206,4 +214,4 @@ _decode(source_fd, source_sv, input_fd, input_sv, output_fd)
         encode_decode(0,
                       source_fd, source_str, (off_t) source_str_size,
                       input_fd, input_str, (off_t) input_str_size,
-                      output_fd);
+                      output_fd, output_sv);

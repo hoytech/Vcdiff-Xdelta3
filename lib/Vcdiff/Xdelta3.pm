@@ -10,11 +10,11 @@ XSLoader::load('Vcdiff::Xdelta3', $VERSION);
 
 
 sub encode {
-  my ($source, $input) = @_;
+  my ($source, $input, $output) = @_;
 
-  my ($source_fileno, $source_str, $input_fileno, $input_str);
+  my ($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
 
-  $source_fileno = $input_fileno = -1;
+  $source_fileno = $input_fileno = $output_fileno = -1;
 
   if (ref $source eq 'GLOB') {
     $source_fileno = fileno($source);
@@ -28,16 +28,27 @@ sub encode {
     $input_str = $input;
   }
 
-  _encode($source_fileno, $source_str, $input_fileno, $input_str, 1);
+  if (defined $output) {
+    die "output argument to encode should be a file handle or undef"
+      if ref $output ne 'GLOB';
+
+    $output_fileno = fileno($output);
+  } else {
+    $output_str = '';
+  }
+
+  _encode($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
+
+  return $output_str if !defined $output;
 }
 
 
 sub decode {
-  my ($source, $input) = @_;
+  my ($source, $input, $output) = @_;
 
-  my ($source_fileno, $source_str, $input_fileno, $input_str);
+  my ($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
 
-  $source_fileno = $input_fileno = -1;
+  $source_fileno = $input_fileno = $output_fileno = -1;
 
   if (ref $source eq 'GLOB') {
     $source_fileno = fileno($source);
@@ -51,8 +62,18 @@ sub decode {
     $input_str = $input;
   }
 
-  _decode($source_fileno, $source_str, $input_fileno, $input_str, 1);
+  if (defined $output) {
+    die "output argument to decode should be a file handle or undef"
+      if ref $output ne 'GLOB';
 
+    $output_fileno = fileno($output);
+  } else {
+    $output_str = '';
+  }
+
+  _decode($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
+
+  return $output_str if !defined $output;
 }
 
 
