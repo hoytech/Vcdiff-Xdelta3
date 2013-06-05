@@ -9,7 +9,7 @@ XSLoader::load('Vcdiff::Xdelta3', $VERSION);
 
 
 
-sub encode {
+sub diff {
   my ($source, $input, $output) = @_;
 
   my ($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
@@ -43,7 +43,7 @@ sub encode {
 }
 
 
-sub decode {
+sub patch {
   my ($source, $input, $output) = @_;
 
   my ($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
