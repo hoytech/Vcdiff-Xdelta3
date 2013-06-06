@@ -7,7 +7,7 @@
 
 #include "xdelta3.h"
 
-#define BUF_SIZE XD3_DEFAULT_WINSIZE
+#define BUF_SIZE 65536
 
 #ifndef MIN
 #define MIN(x,y) ((x)<(y)?(x):(y))
