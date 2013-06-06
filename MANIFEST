@@ -15,9 +15,9 @@ inc/xdelta3-second.h
 inc/xdelta3-test.h
 inc/xdelta3.c
 inc/xdelta3.h
+Interface.xs
 lib/Vcdiff/Xdelta3.pm
 Makefile.PL
 MANIFEST
 MANIFEST.SKIP
 t/in_mem.t
-Interface.xs
