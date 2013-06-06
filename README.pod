@@ -14,14 +14,12 @@ Vcdiff::Xdelta3 - Xdelta3 backend for Vcdiff
 
     ## $target2 is the same as $targe
 
-See L<Vcdiff> for more details on the API.
+This module is a backend to the L<Vcdiff> module and isn't usually used directly.
 
 
 =head1 DESCRIPTION
 
-Xdelta3 is a delta encoding library by Joshua MacDonald.
-
-This module isn't usually used directly. Instead it is a backend to the L<Vcdiff> module. 
+Xdelta3 is a delta encoding library by Joshua MacDonald. The xdelta3 source code is embedded into this module and built as a shared object. The xdelta3 binary is not built.
 
 
 =head1 PROS
