@@ -19,5 +19,5 @@ lib/Vcdiff/Xdelta3.pm
 Makefile.PL
 MANIFEST
 MANIFEST.SKIP
-t/all_strings.t
+t/in_mem.t
 Interface.xs

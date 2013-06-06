@@ -2,6 +2,8 @@ package Vcdiff::Xdelta3;
 
 use strict;
 
+use Vcdiff;
+
 our $VERSION = '0.100';
 
 require XSLoader;
