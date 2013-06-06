@@ -94,19 +94,65 @@ sub patch {
 
 =head1 NAME
 
-Vcdiff::Xdelta3 - Build and install Josh MacDonald's delta encoding library
+Vcdiff::Xdelta3 - Xdelta3 backend for Vcdiff
 
 =head1 SYNOPSIS
 
+    use Vcdiff::Xdelta3;
+
+    my $delta = Vcdiff::Xdelta3::diff($source, $target);
+
+    ## ... send the $delta string to someone who has $source ...
+
+    my $target2 = Vcdiff::Xdelta3::patch($source, $delta);
+
+    ## $target2 is the same as $targe
+
+See L<Vcdiff> for more details on the API.
+
+
 =head1 DESCRIPTION
+
+Xdelta3 is a delta encoding library by Joshua MacDonald.
+
+This module isn't usually used directly. Instead it is a backend to the L<Vcdiff> module. 
+
+
+=head1 PROS
+
+=over
+
+=item *
+
+Doesn't have arbitrary size limitations on source, target, or delta files.
+
+=back
+
+
+=head1 CONS
+
+=over
+
+=item *
+
+GPL licensed
+
+=back
+
 
 =head1 SEE ALSO
 
 L<Vcdiff-Xdelta3 github repo|https://github.com/hoytech/Vcdiff-Xdelta3>
 
+L<Vcdiff>
+
+L<Official Xdelta3 website|http://xdelta.org/>
+
+
 =head1 AUTHOR
 
 Doug Hoyte, C<< <doug@hcsw.org> >>
+
 
 =head1 COPYRIGHT & LICENSE
 
