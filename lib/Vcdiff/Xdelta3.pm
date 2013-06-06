@@ -16,20 +16,24 @@ sub diff {
 
   $source_fileno = $input_fileno = $output_fileno = -1;
 
-  if (ref $source eq 'GLOB') {
+  if (!defined $source) {
+    die "diff needs source argument";
+  } elsif (ref $source eq 'GLOB') {
     $source_fileno = fileno($source);
   } else {
     $source_str = $source;
   }
 
-  if (ref $input eq 'GLOB') {
+  if (!defined $input) {
+    die "diff needs target argument";
+  } elsif (ref $input eq 'GLOB') {
     $input_fileno = fileno($input);
   } else {
     $input_str = $input;
   }
 
   if (defined $output) {
-    die "output argument to encode should be a file handle or undef"
+    die "output argument to diff should be a file handle or undef"
       if ref $output ne 'GLOB';
 
     $output_fileno = fileno($output);
@@ -50,20 +54,24 @@ sub patch {
 
   $source_fileno = $input_fileno = $output_fileno = -1;
 
-  if (ref $source eq 'GLOB') {
+  if (!defined $source) {
+    die "patch needs source argument";
+  } elsif (ref $source eq 'GLOB') {
     $source_fileno = fileno($source);
   } else {
     $source_str = $source;
   }
 
-  if (ref $input eq 'GLOB') {
+  if (!defined $input) {
+    die "patch needs delta argument";
+  } elsif (ref $input eq 'GLOB') {
     $input_fileno = fileno($input);
   } else {
     $input_str = $input;
   }
 
   if (defined $output) {
-    die "output argument to decode should be a file handle or undef"
+    die "output argument to patch should be a file handle or undef"
       if ref $output ne 'GLOB';
 
     $output_fileno = fileno($output);
