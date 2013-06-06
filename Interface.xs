@@ -23,19 +23,6 @@ int encode_decode(int encode,
   xd3_source source;
   unsigned char *ibuf;
   int ibuf_len;
-  FILE *source_file = NULL;
-  FILE *input_file = NULL;
-  FILE *output_file = NULL;
-
-  if (source_fd > -1) {
-    source_file = fdopen(source_fd, "rb");
-  }
-  if (input_fd > -1) {
-    input_file = fdopen(input_fd, "rb");
-  }
-  if (output_fd > -1) {
-    output_file = fdopen(output_fd, "wb");
-  }
 
   memset(&stream, 0, sizeof (stream));
   memset(&source, 0, sizeof (source));
@@ -47,10 +34,10 @@ int encode_decode(int encode,
   source.blksize = BUF_SIZE;
   source.curblkno = 0;
 
-  if (source_file) {
+  if (source_fd != -1) {
     source.curblk = malloc(source.blksize);
-    r = fseek(source_file, 0, SEEK_SET);
-    source.onblk = fread((void*)source.curblk, 1, source.blksize, source_file);
+    r = lseek(source_fd, 0, SEEK_SET);
+    source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
   } else {
     source.curblk = source_str;
     source.onblk = MIN(source.blksize, source_str_size);
@@ -58,9 +45,9 @@ int encode_decode(int encode,
 
   xd3_set_source(&stream, &source);
 
-  if (input_file) {
+  if (input_fd != -1) {
     ibuf = malloc(BUF_SIZE);
-    fseek(input_file, 0, SEEK_SET);
+    lseek(input_fd, 0, SEEK_SET);
   } else {
     ibuf = input_str;
     ibuf_len = 0;
@@ -68,8 +55,8 @@ int encode_decode(int encode,
 
   do
   {
-    if (input_file) {
-      ibuf_len = fread(ibuf, 1, BUF_SIZE, input_file);
+    if (input_fd != -1) {
+      ibuf_len = read(input_fd, ibuf, BUF_SIZE);
     } else {
       ibuf += ibuf_len;
       ibuf_len = MIN(BUF_SIZE, input_str_size - (ibuf - input_str));
@@ -91,8 +78,8 @@ process:
       continue;
 
     case XD3_OUTPUT:
-      if (output_file) {
-        r = fwrite(stream.next_out, 1, stream.avail_out, output_file);
+      if (output_fd != -1) {
+        r = write(output_fd, stream.next_out, stream.avail_out);
         if (r != (int)stream.avail_out)
           return r;
       } else {
@@ -106,10 +93,9 @@ process:
     case XD3_GETSRCBLK:
       source.curblkno = source.getblkno;
 
-      if (source_file) {
-        r = fseek(source_file, source.blksize * source.getblkno, SEEK_SET);
-        source.onblk = fread((void*)source.curblk, 1,
-                             source.blksize, source_file);
+      if (source_fd > -1) {
+        r = lseek(source_fd, source.blksize * source.getblkno, SEEK_SET);
+        source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
       } else {
         source.curblk = source_str + (source.blksize * source.getblkno);
         source.onblk = MIN(source.blksize, source_str_size - (source.blksize * source.getblkno));
@@ -128,18 +114,12 @@ process:
 
   } while (ibuf_len == BUF_SIZE);
 
-  if (source_file) {
+  if (source_fd != -1) {
     free((void*)source.curblk);
-    fclose(source_file);
   }
 
-  if (input_file) {
+  if (input_fd != -1) {
     free(ibuf);
-    fclose(input_file);
-  }
-
-  if (output_file) {
-    fclose(output_file);
   }
 
   xd3_close_stream(&stream);
