@@ -14,8 +14,8 @@
 #endif
 
 int encode_decode(int encode,
-                  int source_fd, unsigned char *source_str, off_t source_str_size,
-                  int input_fd, unsigned char *input_str, off_t input_str_size,
+                  int source_fd, SV *source_sv,
+                  int input_fd, SV *input_sv,
                   int output_fd, SV *output_sv) {
   int r, ret;
   xd3_stream stream;
@@ -23,6 +23,10 @@ int encode_decode(int encode,
   xd3_source source;
   unsigned char *ibuf;
   int ibuf_len;
+  unsigned char *source_str = NULL;
+  size_t source_str_size = 0;
+  unsigned char *input_str = NULL;
+  size_t input_str_size = 0;
 
   memset(&stream, 0, sizeof (stream));
   memset(&source, 0, sizeof (source));
@@ -39,6 +43,8 @@ int encode_decode(int encode,
     r = lseek(source_fd, 0, SEEK_SET);
     source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
   } else {
+    source_str_size = SvCUR(source_sv);
+    source_str = SvPV(source_sv, source_str_size);
     source.curblk = source_str;
     source.onblk = MIN(source.blksize, source_str_size);
   }
@@ -49,6 +55,8 @@ int encode_decode(int encode,
     ibuf = malloc(BUF_SIZE);
     lseek(input_fd, 0, SEEK_SET);
   } else {
+    input_str_size = SvCUR(input_sv);
+    input_str = SvPV(input_sv, input_str_size);
     ibuf = input_str;
     ibuf_len = 0;
   }
@@ -145,24 +153,9 @@ _encode(source_fd, source_sv, input_fd, input_sv, output_fd, output_sv)
         int output_fd
         SV *output_sv
     CODE:
-        unsigned char *source_str = NULL;
-        size_t source_str_size = 0;
-        unsigned char *input_str = NULL;
-        size_t input_str_size = 0;
-
-        if (source_fd == -1) {
-          source_str_size = SvCUR(source_sv);
-          source_str = SvPV(source_sv, source_str_size);
-        }
-
-        if (input_fd == -1) {
-          input_str_size = SvCUR(input_sv);
-          input_str = SvPV(input_sv, input_str_size);
-        }
-
         encode_decode(1,
-                      source_fd, source_str, (off_t) source_str_size,
-                      input_fd, input_str, (off_t) input_str_size,
+                      source_fd, source_sv,
+                      input_fd, input_sv,
                       output_fd, output_sv);
 
 
@@ -176,22 +169,7 @@ _decode(source_fd, source_sv, input_fd, input_sv, output_fd, output_sv)
         int output_fd
         SV *output_sv
     CODE:
-        unsigned char *source_str = NULL;
-        size_t source_str_size = 0;
-        unsigned char *input_str = NULL;
-        size_t input_str_size = 0;
-
-        if (source_fd == -1) {
-          source_str_size = SvCUR(source_sv);
-          source_str = SvPV(source_sv, source_str_size);
-        }
-
-        if (input_fd == -1) {
-          input_str_size = SvCUR(input_sv);
-          input_str = SvPV(input_sv, input_str_size);
-        }
-
         encode_decode(0,
-                      source_fd, source_str, (off_t) source_str_size,
-                      input_fd, input_str, (off_t) input_str_size,
+                      source_fd, source_sv,
+                      input_fd, input_sv,
                       output_fd, output_sv);
