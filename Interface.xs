@@ -82,42 +82,42 @@ process:
       ret = xd3_decode_input(&stream);
 
     switch (ret) {
-    case XD3_INPUT:
-      continue;
+      case XD3_INPUT:
+        continue;
 
-    case XD3_OUTPUT:
-      if (output_fd != -1) {
-        r = write(output_fd, stream.next_out, stream.avail_out);
-        if (r != (int)stream.avail_out)
-          return r;
-      } else {
-        sv_catpvn(output_sv, stream.next_out, stream.avail_out);
-      }
+      case XD3_OUTPUT:
+        if (output_fd != -1) {
+          r = write(output_fd, stream.next_out, stream.avail_out);
+          if (r != (int)stream.avail_out)
+            return r;
+        } else {
+          sv_catpvn(output_sv, stream.next_out, stream.avail_out);
+        }
 
-      xd3_consume_output(&stream);
+        xd3_consume_output(&stream);
 
-      goto process;
+        goto process;
 
-    case XD3_GETSRCBLK:
-      source.curblkno = source.getblkno;
+      case XD3_GETSRCBLK:
+        source.curblkno = source.getblkno;
 
-      if (source_fd > -1) {
-        r = lseek(source_fd, source.blksize * source.getblkno, SEEK_SET);
-        source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
-      } else {
-        source.curblk = source_str + (source.blksize * source.getblkno);
-        source.onblk = MIN(source.blksize, source_str_size - (source.blksize * source.getblkno));
-      }
-      goto process;
+        if (source_fd > -1) {
+          r = lseek(source_fd, source.blksize * source.getblkno, SEEK_SET);
+          source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
+        } else {
+          source.curblk = source_str + (source.blksize * source.getblkno);
+          source.onblk = MIN(source.blksize, source_str_size - (source.blksize * source.getblkno));
+        }
 
-    case XD3_GOTHEADER:
-    case XD3_WINSTART:
-    case XD3_WINFINISH:
-      goto process;
+        goto process;
 
-    default:
-      return ret;
+      case XD3_GOTHEADER:
+      case XD3_WINSTART:
+      case XD3_WINFINISH:
+        goto process;
 
+      default:
+        return ret;
     }
 
   } while (ibuf_len == BUF_SIZE);
