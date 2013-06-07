@@ -2,6 +2,8 @@ package Vcdiff::Xdelta3;
 
 use strict;
 
+use Carp;
+
 use Vcdiff;
 
 our $VERSION = '0.100';
@@ -19,7 +21,7 @@ sub diff {
   $source_fileno = $input_fileno = $output_fileno = -1;
 
   if (!defined $source) {
-    die "diff needs source argument";
+    croak "diff needs source argument";
   } elsif (ref $source eq 'GLOB') {
     $source_fileno = fileno($source);
   } else {
@@ -27,7 +29,7 @@ sub diff {
   }
 
   if (!defined $input) {
-    die "diff needs target argument";
+    croak "diff needs target argument";
   } elsif (ref $input eq 'GLOB') {
     $input_fileno = fileno($input);
   } else {
@@ -35,7 +37,7 @@ sub diff {
   }
 
   if (defined $output) {
-    die "output argument to diff should be a file handle or undef"
+    croak "output argument to diff should be a file handle or undef"
       if ref $output ne 'GLOB';
 
     $output_fileno = fileno($output);
@@ -43,7 +45,9 @@ sub diff {
     $output_str = '';
   }
 
-  _encode($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
+  my $ret = _encode($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
+
+  _check_ret($ret, 'diff');
 
   return $output_str if !defined $output;
 }
@@ -57,7 +61,7 @@ sub patch {
   $source_fileno = $input_fileno = $output_fileno = -1;
 
   if (!defined $source) {
-    die "patch needs source argument";
+    croak "patch needs source argument";
   } elsif (ref $source eq 'GLOB') {
     $source_fileno = fileno($source);
   } else {
@@ -65,7 +69,7 @@ sub patch {
   }
 
   if (!defined $input) {
-    die "patch needs delta argument";
+    croak "patch needs delta argument";
   } elsif (ref $input eq 'GLOB') {
     $input_fileno = fileno($input);
   } else {
@@ -73,7 +77,7 @@ sub patch {
   }
 
   if (defined $output) {
-    die "output argument to patch should be a file handle or undef"
+    croak "output argument to patch should be a file handle or undef"
       if ref $output ne 'GLOB';
 
     $output_fileno = fileno($output);
@@ -81,9 +85,36 @@ sub patch {
     $output_str = '';
   }
 
-  _decode($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
+  my $ret = _decode($source_fileno, $source_str, $input_fileno, $input_str, $output_fileno, $output_str);
+
+  _check_ret($ret, 'patch');
 
   return $output_str if !defined $output;
+}
+
+
+
+my $exception_map = {
+  1 => 'xd3_config_stream',
+  2 => 'unable to allocate memory for source.blksize',
+  3 => 'source is not lseek()able (must be a regular file, not a pipe/socket)',
+  4 => 'error reading from source',
+  5 => 'unable to allocate memory for ibuf',
+  6 => 'error reading from target/delta',
+  7 => 'error writing to output',
+  8 => 'xd3_close_stream',
+};
+
+sub _check_ret {
+  my ($ret, $func) = @_;
+
+  return unless $ret;
+
+  my $exception = $exception_map->{$ret};
+
+  croak "error in Vcdiff::Xdelta3::$func: $exception" if $exception;
+
+  croak "unknown error in Vcdiff::Xdelta3::$func ($ret)";
 }
 
 

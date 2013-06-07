@@ -7,6 +7,7 @@
 
 #include "xdelta3.h"
 
+// FIXME: figure out the right value for this: maybe dynamic?
 #define BUF_SIZE 65536
 
 #ifndef MIN
@@ -17,12 +18,13 @@ int encode_decode(int encode,
                   int source_fd, SV *source_sv,
                   int input_fd, SV *input_sv,
                   int output_fd, SV *output_sv) {
-  int r, ret;
+  int ret;
+  int error = 0;
   xd3_stream stream;
   xd3_config config;
   xd3_source source;
-  unsigned char *ibuf;
-  int ibuf_len;
+  unsigned char *ibuf = NULL;
+  int ibuf_len = 0;
   unsigned char *source_str = NULL;
   size_t source_str_size = 0;
   unsigned char *input_str = NULL;
@@ -33,15 +35,29 @@ int encode_decode(int encode,
 
   xd3_init_config(&config, 0);
   config.winsize = BUF_SIZE;
-  xd3_config_stream(&stream, &config);
+  if (xd3_config_stream(&stream, &config)) {
+    error = 1;
+    return;
+  }
 
   source.blksize = BUF_SIZE;
   source.curblkno = 0;
 
   if (source_fd != -1) {
     source.curblk = malloc(source.blksize);
-    r = lseek(source_fd, 0, SEEK_SET);
+    if (!source.curblk) {
+      error = 2;
+      goto bail;
+    }
+    if (lseek(source_fd, 0, SEEK_SET) < 0) {
+      error = 3;
+      goto bail;
+    }
     source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
+    if (source.onblk < 0) {
+      error = 4;
+      goto bail;
+    }
   } else {
     source_str_size = SvCUR(source_sv);
     source_str = SvPV(source_sv, source_str_size);
@@ -53,7 +69,11 @@ int encode_decode(int encode,
 
   if (input_fd != -1) {
     ibuf = malloc(BUF_SIZE);
-    lseek(input_fd, 0, SEEK_SET);
+    if (!ibuf) {
+      error = 5;
+      goto bail;
+    }
+    lseek(input_fd, 0, SEEK_SET); // ignore errors: FIXME: consider if we should even do this
   } else {
     input_str_size = SvCUR(input_sv);
     input_str = SvPV(input_sv, input_str_size);
@@ -65,6 +85,10 @@ int encode_decode(int encode,
   {
     if (input_fd != -1) {
       ibuf_len = read(input_fd, ibuf, BUF_SIZE);
+      if (ibuf_len < 0) {
+        error = 6;
+        goto bail;
+      }
     } else {
       ibuf += ibuf_len;
       ibuf_len = MIN(BUF_SIZE, input_str_size - (ibuf - input_str));
@@ -87,9 +111,10 @@ process:
 
       case XD3_OUTPUT:
         if (output_fd != -1) {
-          r = write(output_fd, stream.next_out, stream.avail_out);
-          if (r != (int)stream.avail_out)
-            return r;
+          if (write(output_fd, stream.next_out, stream.avail_out) != stream.avail_out) {
+            error = 7;
+            goto bail;
+          }
         } else {
           sv_catpvn(output_sv, stream.next_out, stream.avail_out);
         }
@@ -101,9 +126,16 @@ process:
       case XD3_GETSRCBLK:
         source.curblkno = source.getblkno;
 
-        if (source_fd > -1) {
-          r = lseek(source_fd, source.blksize * source.getblkno, SEEK_SET);
+        if (source_fd != -1) {
+          if (lseek(source_fd, source.blksize * source.getblkno, SEEK_SET) < 0) {
+            error = 3;
+            goto bail;
+          }
           source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
+          if (source.onblk < 0) {
+            error = 4;
+            goto bail;
+          }
         } else {
           source.curblk = source_str + (source.blksize * source.getblkno);
           source.onblk = MIN(source.blksize, source_str_size - (source.blksize * source.getblkno));
@@ -122,18 +154,21 @@ process:
 
   } while (ibuf_len == BUF_SIZE);
 
-  if (source_fd != -1) {
+bail:
+  if (source_fd != -1 && source.curblk) {
     free((void*)source.curblk);
   }
 
-  if (input_fd != -1) {
+  if (input_fd != -1 && ibuf) {
     free(ibuf);
   }
 
-  xd3_close_stream(&stream);
+  if (xd3_close_stream(&stream)) {
+    error = 8;
+  }
   xd3_free_stream(&stream);
 
-  return 0;
+  return error;
 }
 
 
@@ -144,7 +179,7 @@ PROTOTYPES: ENABLE
 
 
 
-void
+int
 _encode(source_fd, source_sv, input_fd, input_sv, output_fd, output_sv)
         int source_fd
         SV *source_sv
@@ -153,14 +188,17 @@ _encode(source_fd, source_sv, input_fd, input_sv, output_fd, output_sv)
         int output_fd
         SV *output_sv
     CODE:
-        encode_decode(1,
-                      source_fd, source_sv,
-                      input_fd, input_sv,
-                      output_fd, output_sv);
+        RETVAL = encode_decode(1,
+                               source_fd, source_sv,
+                               input_fd, input_sv,
+                               output_fd, output_sv);
+
+    OUTPUT:
+        RETVAL
 
 
 
-void
+int
 _decode(source_fd, source_sv, input_fd, input_sv, output_fd, output_sv)
         int source_fd
         SV *source_sv
@@ -169,7 +207,10 @@ _decode(source_fd, source_sv, input_fd, input_sv, output_fd, output_sv)
         int output_fd
         SV *output_sv
     CODE:
-        encode_decode(0,
-                      source_fd, source_sv,
-                      input_fd, input_sv,
-                      output_fd, output_sv);
+        RETVAL = encode_decode(0,
+                               source_fd, source_sv,
+                               input_fd, input_sv,
+                               output_fd, output_sv);
+
+    OUTPUT:
+        RETVAL

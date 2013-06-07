@@ -9,6 +9,7 @@ my %args = (
     VERSION_FROM => 'lib/Vcdiff/Xdelta3.pm',
     PREREQ_PM => {
       'Vcdiff' => 0,
+      'Carp' => 0,
     },
     LIBS => [],
     DEFINE => '',
