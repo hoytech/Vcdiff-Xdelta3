@@ -155,6 +155,10 @@ Xdelta3 is a delta encoding library by Joshua MacDonald. The Xdelta3 source code
 
 Doesn't have arbitrary size limitations on source, target, or delta files.
 
+=item *
+
+Has a really neat feature that lets you merge VCDIFF deltas into a single delta. Unfortunately this module doesn't expose that yet.
+
 =back
 
 
@@ -165,6 +169,10 @@ Doesn't have arbitrary size limitations on source, target, or delta files.
 =item *
 
 GPL licensed
+
+=item *
+
+Build system is really weird. I didn't bother figuring out how to run Xdelta3's test-suite when installing the CPAN module which is unfortunate. Note that installing this module does still run the shared test-suite in L<Vcdiff>.
 
 =back
 
