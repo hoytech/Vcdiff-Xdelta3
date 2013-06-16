@@ -137,7 +137,7 @@ Vcdiff::Xdelta3 - Xdelta3 backend for Vcdiff
 
     my $target2 = Vcdiff::Xdelta3::patch($source, $delta);
 
-    ## $target2 is the same as $targe
+    ## $target2 is the same as $target
 
 This module is a backend to the L<Vcdiff> module and isn't usually used directly.
 

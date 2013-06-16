@@ -81,8 +81,7 @@ int encode_decode(int encode,
     ibuf_len = 0;
   }
 
-  do
-  {
+  do {
     if (input_fd != -1) {
       ibuf_len = read(input_fd, ibuf, BUF_SIZE);
       if (ibuf_len < 0) {
