@@ -144,7 +144,7 @@ This module is a backend to the L<Vcdiff> module and isn't usually used directly
 
 =head1 DESCRIPTION
 
-Xdelta3 is a delta encoding library by Joshua MacDonald. The xdelta3 source code is embedded into this module and built as a shared object. The xdelta3 binary is not built.
+Xdelta3 is a delta encoding library by Joshua MacDonald. The Xdelta3 source code is embedded into this module and built as a shared object. The C<xdelta3> command-line binary is not built.
 
 
 =head1 PROS
