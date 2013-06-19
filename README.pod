@@ -8,11 +8,9 @@ Vcdiff::Xdelta3 - Xdelta3 backend for Vcdiff
 
     my $delta = Vcdiff::Xdelta3::diff($source, $target);
 
-    ## ... send the $delta string to someone who has $source ...
-
     my $target2 = Vcdiff::Xdelta3::patch($source, $delta);
 
-    ## $target2 is the same as $target
+    ## $target2 eq $target
 
 This module is a backend to the L<Vcdiff> module and isn't usually used directly.
 
