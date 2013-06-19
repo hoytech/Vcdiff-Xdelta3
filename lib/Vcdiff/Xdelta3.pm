@@ -6,7 +6,7 @@ use Carp;
 
 use Vcdiff;
 
-our $VERSION = '0.100';
+our $VERSION = '0.103';
 
 require XSLoader;
 XSLoader::load('Vcdiff::Xdelta3', $VERSION);
