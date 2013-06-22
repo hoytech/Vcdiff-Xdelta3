@@ -19,15 +19,16 @@ int encode_decode(int encode,
                   int input_fd, SV *input_sv,
                   int output_fd, SV *output_sv) {
   int ret;
+  ssize_t ssize_ret;
   int error = 0;
   xd3_stream stream;
   xd3_config config;
   xd3_source source;
-  unsigned char *ibuf = NULL;
+  char *ibuf = NULL;
   int ibuf_len = 0;
-  unsigned char *source_str = NULL;
+  char *source_str = NULL;
   size_t source_str_size = 0;
-  unsigned char *input_str = NULL;
+  char *input_str = NULL;
   size_t input_str_size = 0;
 
   memset(&stream, 0, sizeof (stream));
@@ -36,8 +37,8 @@ int encode_decode(int encode,
   xd3_init_config(&config, 0);
   config.winsize = BUF_SIZE;
   if (xd3_config_stream(&stream, &config)) {
-    error = 1;
-    return;
+    // Nothing to clean up so just return error straight away
+    return 1;
   }
 
   source.blksize = BUF_SIZE;
@@ -53,15 +54,17 @@ int encode_decode(int encode,
       error = 3;
       goto bail;
     }
-    source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
-    if (source.onblk < 0) {
+    ssize_ret = read(source_fd, (void*)source.curblk, source.blksize);
+    if (ssize_ret < 0) {
       error = 4;
       goto bail;
+    } else {
+      source.onblk = (size_t) ssize_ret;
     }
   } else {
     source_str_size = SvCUR(source_sv);
     source_str = SvPV(source_sv, source_str_size);
-    source.curblk = source_str;
+    source.curblk = (uint8_t *) source_str;
     source.onblk = MIN(source.blksize, source_str_size);
   }
 
@@ -96,7 +99,7 @@ int encode_decode(int encode,
     if (ibuf_len < BUF_SIZE) {
       xd3_set_flags(&stream, XD3_FLUSH | stream.flags);
     }
-    xd3_avail_input(&stream, ibuf, ibuf_len);
+    xd3_avail_input(&stream, (uint8_t *) ibuf, ibuf_len);
 
 process:
     if (encode)
@@ -110,12 +113,13 @@ process:
 
       case XD3_OUTPUT:
         if (output_fd != -1) {
-          if (write(output_fd, stream.next_out, stream.avail_out) != stream.avail_out) {
+          ssize_ret = write(output_fd, stream.next_out, stream.avail_out);
+          if (ssize_ret < 0 || ((size_t)ssize_ret) != stream.avail_out) {
             error = 7;
             goto bail;
           }
         } else {
-          sv_catpvn(output_sv, stream.next_out, stream.avail_out);
+          sv_catpvn(output_sv, (char *) stream.next_out, stream.avail_out);
         }
 
         xd3_consume_output(&stream);
@@ -130,13 +134,15 @@ process:
             error = 3;
             goto bail;
           }
-          source.onblk = read(source_fd, (void*)source.curblk, source.blksize);
-          if (source.onblk < 0) {
+          ssize_ret = read(source_fd, (void*)source.curblk, source.blksize);
+          if (ssize_ret < 0) {
             error = 4;
             goto bail;
+          } else {
+            source.onblk = (size_t) ssize_ret;
           }
         } else {
-          source.curblk = source_str + (source.blksize * source.getblkno);
+          source.curblk = (uint8_t *) (source_str + (source.blksize * source.getblkno));
           source.onblk = MIN(source.blksize, source_str_size - (source.blksize * source.getblkno));
         }
 
@@ -148,7 +154,9 @@ process:
         goto process;
 
       default:
-        return ret;
+        // These values start at -17703 and go down
+        error = ret;
+        goto bail;
     }
 
   } while (ibuf_len == BUF_SIZE);
