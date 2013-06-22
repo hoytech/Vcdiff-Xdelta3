@@ -76,7 +76,6 @@ int encode_decode(int encode,
       error = 5;
       goto bail;
     }
-    lseek(input_fd, 0, SEEK_SET); // ignore errors: FIXME: consider if we should even do this
   } else {
     input_str_size = SvCUR(input_sv);
     input_str = SvPV(input_sv, input_str_size);
