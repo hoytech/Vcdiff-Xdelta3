@@ -168,7 +168,7 @@ bail:
     free(ibuf);
   }
 
-  if (xd3_close_stream(&stream)) {
+  if (xd3_close_stream(&stream) && !error) {
     error = 8;
   }
   xd3_free_stream(&stream);
