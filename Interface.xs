@@ -41,6 +41,7 @@ int encode_decode(int encode,
     return 1;
   }
 
+  source.blksize = BUF_SIZE;
   source.curblkno = 0;
 
   if (source_fd != -1) {
