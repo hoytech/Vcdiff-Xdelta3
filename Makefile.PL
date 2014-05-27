@@ -14,7 +14,7 @@ my %args = (
     INC => '-Iinc/',
     OBJECT => 'inc/xdelta3.o Interface.o',
     LDFROM => 'xdelta3.o Interface.o',
-    LICENSE => 'gpl',
+    LICENSE => 'gpl_2',
     dist => {
       PREOP => 'perldoc -uT lib/Vcdiff/Xdelta3.pm > README.pod; pod2text README.pod > $(DISTVNAME)/README',
     },
