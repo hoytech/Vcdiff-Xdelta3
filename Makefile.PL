@@ -16,7 +16,7 @@ my %args = (
     LDFROM => 'xdelta3.o Interface.o',
     LICENSE => 'gpl_2',
     dist => {
-      PREOP => 'perldoc -uT lib/Vcdiff/Xdelta3.pm > README.pod; pod2text README.pod > $(DISTVNAME)/README',
+      PREOP => 'pod2text $(VERSION_FROM) > $(DISTVNAME)/README',
     },
 );
 
